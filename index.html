@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentio — Symptom Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B1220;
+    --panel: #111A2C;
+    --panel-2: #16213A;
+    --border: #22304A;
+    --text: #E7EBF3;
+    --text-dim: #8B96AC;
+    --accent: #5EEAD4;
+    --accent-dim: #2C9C8B;
+    --user-bubble: #1E2A44;
+    --radius: 14px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 24px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:28px; height:28px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand-name{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:20px;
+    letter-spacing:-0.02em;
+  }
+  .brand-tag{
+    font-size:12px;
+    color:var(--text-dim);
+    margin-left:2px;
+    padding-top:3px;
+  }
+  .status-pill{
+    font-size:11px;
+    color:var(--text-dim);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:5px 12px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .status-dot{
+    width:6px;height:6px;border-radius:50%;
+    background: var(--text-dim);
+  }
+  .status-dot.live{ background: var(--accent); box-shadow:0 0 8px var(--accent); }
+
+  /* ---------- Chat area ---------- */
+  main{
+    flex:1;
+    overflow-y:auto;
+    display:flex;
+    justify-content:center;
+  }
+  .chat-inner{
+    width:100%;
+    max-width:760px;
+    padding:32px 20px 140px;
+  }
+
+  .empty-state{
+    margin-top:12vh;
+    text-align:center;
+    color:var(--text-dim);
+  }
+  .empty-state h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:28px;
+    font-weight:600;
+    color:var(--text);
+    margin-bottom:10px;
+    letter-spacing:-0.02em;
+  }
+  .empty-state p{
+    font-size:14.5px;
+    max-width:420px;
+    margin:0 auto 28px;
+    line-height:1.6;
+  }
+  .suggestion-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+  }
+  .suggestion-chip{
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--text-dim);
+    padding:9px 14px;
+    border-radius:999px;
+    font-size:13px;
+    cursor:pointer;
+    transition: border-color .15s, color .15s;
+  }
+  .suggestion-chip:hover{ border-color:var(--accent-dim); color:var(--text); }
+
+  .msg-row{
+    display:flex;
+    margin-bottom:22px;
+    animation: rise .25s ease;
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .msg-row.user{ justify-content:flex-end; }
+  .bubble{
+    max-width:78%;
+    padding:12px 16px;
+    border-radius:var(--radius);
+    font-size:14.5px;
+    line-height:1.55;
+    white-space:pre-wrap;
+  }
+  .msg-row.user .bubble{
+    background:var(--user-bubble);
+    border:1px solid var(--border);
+    border-bottom-right-radius:4px;
+  }
+  .msg-row.assistant .bubble{
+    background:transparent;
+    padding-left:0;
+    max-width:100%;
+  }
+
+  .assistant-label{
+    font-size:11px;
+    color:var(--accent);
+    font-weight:600;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+
+  /* ---------- Prediction card ---------- */
+  .prediction-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px 18px 14px;
+    margin-top:4px;
+  }
+  .pred-primary{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .pred-primary .label{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:19px;
+    font-weight:600;
+    text-transform:capitalize;
+  }
+  .pred-primary .conf{
+    font-size:13px;
+    color:var(--accent);
+    font-weight:600;
+  }
+  .pred-alt-list{ display:flex; flex-direction:column; gap:9px; }
+  .pred-alt-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:13px;
+    color:var(--text-dim);
+  }
+  .pred-alt-row .name{ width:180px; flex-shrink:0; text-transform:capitalize; color:var(--text); }
+  .bar-track{
+    flex:1;
+    height:5px;
+    background:var(--panel-2);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    background:var(--accent-dim);
+    border-radius:4px;
+  }
+  .pred-alt-row .pct{ width:38px; text-align:right; flex-shrink:0; }
+
+  .disclaimer{
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px solid var(--border);
+    font-size:11.5px;
+    color:var(--text-dim);
+    line-height:1.5;
+  }
+
+  /* ---------- Thinking indicator (signature element) ---------- */
+  .pulse-wrap{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:6px 0;
+  }
+  .pulse-wrap span{ font-size:13px; color:var(--text-dim); }
+  svg.pulse{ width:64px; height:24px; overflow:visible; }
+  .pulse-line{
+    fill:none;
+    stroke:var(--accent);
+    stroke-width:2;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-dasharray: 120;
+    stroke-dashoffset: 120;
+    animation: draw 1.4s ease-in-out infinite;
+  }
+  @keyframes draw{
+    0%{ stroke-dashoffset:120; opacity:.3; }
+    50%{ stroke-dashoffset:0; opacity:1; }
+    100%{ stroke-dashoffset:-120; opacity:.3; }
+  }
+
+  /* ---------- Input ---------- */
+  .input-dock{
+    position:fixed;
+    bottom:0; left:0; right:0;
+    display:flex;
+    justify-content:center;
+    padding:18px 20px 22px;
+    background:linear-gradient(to top, var(--bg) 55%, transparent);
+  }
+  .input-shell{
+    width:100%;
+    max-width:760px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:18px;
+    display:flex;
+    align-items:flex-end;
+    padding:10px 10px 10px 18px;
+    gap:10px;
+    transition: border-color .15s;
+  }
+  .input-shell:focus-within{ border-color: var(--accent-dim); }
+  textarea{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    resize:none;
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    font-size:14.5px;
+    line-height:1.5;
+    max-height:140px;
+    padding:8px 0;
+  }
+  textarea::placeholder{ color:var(--text-dim); }
+  .send-btn{
+    width:36px; height:36px;
+    border-radius:10px;
+    background:var(--accent);
+    border:none;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    transition: opacity .15s, transform .1s;
+  }
+  .send-btn:disabled{ opacity:.35; cursor:default; }
+  .send-btn:active:not(:disabled){ transform:scale(.92); }
+  .input-hint{
+    text-align:center;
+    font-size:11px;
+    color:var(--text-dim);
+    max-width:760px;
+    margin:10px auto 0;
+  }
+
+  main::-webkit-scrollbar{ width:8px; }
+  main::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#5EEAD4" stroke-width="1.4" opacity="0.35"/>
+        <path d="M4 13h4l2-6 3 12 2.5-9 1.5 3h5" stroke="#5EEAD4" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="brand-name">Sentio</span>
+    <span class="brand-tag">/ symptom intelligence</span>
+  </div>
+  <div class="status-pill">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">checking model server…</span>
+  </div>
+</header>
+
+<main id="main">
+  <div class="chat-inner" id="chatInner">
+    <div class="empty-state" id="emptyState">
+      <h1>Describe how you're feeling</h1>
+      <p>Sentio reads your symptoms and surfaces the conditions they're most consistent with — the way you'd describe them out loud, no forms to fill in.</p>
+      <div class="suggestion-row">
+        <div class="suggestion-chip" data-text="I have a sharp pain in my lower right abdomen and mild fever">Abdominal pain + fever</div>
+        <div class="suggestion-chip" data-text="I've had a persistent dry cough and shortness of breath for a week">Cough + breathlessness</div>
+        <div class="suggestion-chip" data-text="Constant itching and redness on my elbows and behind my knees">Itching + skin redness</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="input-dock">
+  <div style="width:100%; max-width:760px;">
+    <div class="input-shell">
+      <textarea id="inputBox" rows="1" placeholder="Describe your symptoms in your own words…"></textarea>
+      <button class="send-btn" id="sendBtn" disabled>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M2 8h11M8 2l6 6-6 6" stroke="#0B1220" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="input-hint">Sentio is a student research project, not a medical device. For anything urgent, contact a clinician.</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG — point this at your FastAPI backend (see backend/app.py)
+// ============================================================
+const API_URL = "http://localhost:8000/predict";
+const TOP_K = 4;
+
+const chatInner = document.getElementById('chatInner');
+const emptyState = document.getElementById('emptyState');
+const main = document.getElementById('main');
+const inputBox = document.getElementById('inputBox');
+const sendBtn = document.getElementById('sendBtn');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+// ---- health check ----
+async function checkServer(){
+  try{
+    const res = await fetch(API_URL.replace('/predict','/health'), { signal: AbortSignal.timeout(2500) });
+    if(res.ok){
+      statusDot.classList.add('live');
+      statusText.textContent = 'model server connected';
+      return;
+    }
+  }catch(e){}
+  statusText.textContent = 'demo mode (backend offline)';
+}
+checkServer();
+
+// ---- textarea auto-grow + enable send ----
+inputBox.addEventListener('input', () => {
+  inputBox.style.height = 'auto';
+  inputBox.style.height = Math.min(inputBox.scrollHeight, 140) + 'px';
+  sendBtn.disabled = inputBox.value.trim().length === 0;
+});
+inputBox.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    if(!sendBtn.disabled) sendMessage();
+  }
+});
+sendBtn.addEventListener('click', sendMessage);
+
+document.querySelectorAll('.suggestion-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    inputBox.value = chip.dataset.text;
+    inputBox.dispatchEvent(new Event('input'));
+    sendMessage();
+  });
+});
+
+function scrollToBottom(){
+  requestAnimationFrame(() => { main.scrollTop = main.scrollHeight; });
+}
+
+function addUserMessage(text){
+  if(emptyState) emptyState.remove();
+  const row = document.createElement('div');
+  row.className = 'msg-row user';
+  row.innerHTML = `<div class="bubble"></div>`;
+  row.querySelector('.bubble').textContent = text;
+  chatInner.appendChild(row);
+  scrollToBottom();
+}
+
+function addThinkingRow(){
+  const row = document.createElement('div');
+  row.className = 'msg-row assistant';
+  row.id = 'thinkingRow';
+  row.innerHTML = `
+    <div class="bubble">
+      <div class="assistant-label">Sentio</div>
+      <div class="pulse-wrap">
+        <svg class="pulse" viewBox="0 0 64 24">
+          <path class="pulse-line" d="M0 12 H14 L20 4 L26 20 L32 8 L36 12 H64" />
+        </svg>
+        <span>reading symptoms…</span>
+      </div>
+    </div>`;
+  chatInner.appendChild(row);
+  scrollToBottom();
+}
+
+function removeThinkingRow(){
+  const el = document.getElementById('thinkingRow');
+  if(el) el.remove();
+}
+
+function addPredictionResult(data){
+  const row = document.createElement('div');
+  row.className = 'msg-row assistant';
+
+  const preds = data.predictions || [];
+  const top = preds[0] || { label: "unknown", confidence: 0 };
+  const alts = preds.slice(1, TOP_K);
+
+  let altHtml = alts.map(p => `
+    <div class="pred-alt-row">
+      <div class="name">${p.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(p.confidence*100).toFixed(0)}%"></div></div>
+      <div class="pct">${(p.confidence*100).toFixed(0)}%</div>
+    </div>
+  `).join('');
+
+  row.innerHTML = `
+    <div class="bubble">
+      <div class="assistant-label">Sentio</div>
+      <div class="prediction-card">
+        <div class="pred-primary">
+          <div class="label">${top.label}</div>
+          <div class="conf">${(top.confidence*100).toFixed(0)}% match</div>
+        </div>
+        ${alts.length ? `<div class="pred-alt-list">${altHtml}</div>` : ''}
+        <div class="disclaimer">Model: ${data.model || 'DistilBERT (fine-tuned)'} · This is a research demo, not a diagnosis. Please consult a healthcare professional.</div>
+      </div>
+    </div>`;
+  chatInner.appendChild(row);
+  scrollToBottom();
+}
+
+function addErrorMessage(msg){
+  const row = document.createElement('div');
+  row.className = 'msg-row assistant';
+  row.innerHTML = `
+    <div class="bubble">
+      <div class="assistant-label">Sentio</div>
+      <div class="prediction-card">
+        <div class="pred-primary"><div class="label" style="font-size:15px;">${msg}</div></div>
+      </div>
+    </div>`;
+  chatInner.appendChild(row);
+  scrollToBottom();
+}
+
+// ---- demo-mode fallback so the UI is fully explorable with no backend running ----
+function demoPredict(text){
+  const t = text.toLowerCase();
+  let base;
+  if(t.includes('cough') || t.includes('breath')){
+    base = [["acute bronchitis",0.62],["pneumonia",0.19],["asthma",0.11],["common cold",0.08]];
+  } else if(t.includes('itch') || t.includes('rash') || t.includes('skin')){
+    base = [["eczema",0.58],["contact dermatitis",0.22],["psoriasis",0.12],["fungal infection of the hair",0.08]];
+  } else if(t.includes('abdomen') || t.includes('stomach') || t.includes('pain')){
+    base = [["gastritis",0.47],["cholecystitis",0.24],["gastrointestinal hemorrhage",0.17],["appendicitis",0.12]];
+  } else {
+    base = [["viral infection",0.41],["anxiety",0.23],["migraine",0.19],["allergic reaction",0.17]];
+  }
+  return { predictions: base.map(([label,confidence]) => ({label,confidence})), model: "demo (no backend connected)" };
+}
+
+async function sendMessage(){
+  const text = inputBox.value.trim();
+  if(!text) return;
+  addUserMessage(text);
+  inputBox.value = '';
+  inputBox.style.height = 'auto';
+  sendBtn.disabled = true;
+  addThinkingRow();
+
+  try{
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, top_k: TOP_K }),
+      signal: AbortSignal.timeout(15000)
+    });
+    if(!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    removeThinkingRow();
+    addPredictionResult(data);
+  }catch(e){
+    removeThinkingRow();
+    // graceful fallback: still show something useful in demo mode
+    await new Promise(r => setTimeout(r, 600));
+    addPredictionResult(demoPredict(text));
+  }
+}
+</script>
+
+</body>
+</html>
