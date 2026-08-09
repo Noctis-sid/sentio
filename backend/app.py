@@ -20,13 +20,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from transformers import DistilBertForSequenceClassification, DistilBertTokenizerFast
+from huggingface_hub import snapshot_download
 
 # ============================================================
 # CONFIG — update these paths to match your project structure
 # ============================================================
-PROJECT_ROOT = r"D:\deep_learning_v2"
-MODEL_DIR = os.path.join(PROJECT_ROOT, "models", "distilbert", "best_distilbert")
-LABEL2ID_PATH = os.path.join(PROJECT_ROOT, "dataset", "processed", "label2id.json")
+
+MODEL_DIR = "Zacksid1/sentio-symptom-distilbert"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+LABEL2ID_PATH = os.path.join(BASE_DIR, "label2id.json")
 MAX_LEN = 50
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
