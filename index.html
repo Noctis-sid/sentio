@@ -297,6 +297,20 @@
     margin:10px auto 0;
   }
 
+  .quick-suggestions{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:10px;
+    scrollbar-width:none;
+  }
+  .quick-suggestions::-webkit-scrollbar{ display:none; }
+  .quick-suggestions .suggestion-chip{
+    white-space:nowrap;
+    flex-shrink:0;
+    animation: rise .25s ease;
+  }
+
   main::-webkit-scrollbar{ width:8px; }
   main::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
 </style>
@@ -336,6 +350,7 @@
 
 <div class="input-dock">
   <div style="width:100%; max-width:760px;">
+    <div class="quick-suggestions" id="quickSuggestions"></div>
     <div class="input-shell">
       <textarea id="inputBox" rows="1" placeholder="Describe your symptoms in your own words…"></textarea>
       <button class="send-btn" id="sendBtn" disabled>
@@ -355,11 +370,26 @@
 // Automatically uses localhost while developing, and your Render backend
 // once deployed. Just replace the string below with your actual Render URL
 // after Step 4 (it'll look like https://sentio-backend-xxxx.onrender.com).
-const RENDER_BACKEND_URL = "https://sentio-backend.onrender.com"; // <-- update after deploying
+const RENDER_BACKEND_URL = "https://sentio-ywdz.onrender.com"; // <-- your live backend
 const isLocal = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
 const BASE_URL = isLocal ? "http://localhost:8000" : RENDER_BACKEND_URL;
 const API_URL = `${BASE_URL}/predict`;
 const TOP_K = 4;
+
+const SUGGESTION_POOL = [
+  "I have a sharp pain in my lower right abdomen and mild fever",
+  "I've had a persistent dry cough and shortness of breath for a week",
+  "Constant itching and redness on my elbows and behind my knees",
+  "Sudden dizziness and ringing in my left ear",
+  "Burning pain when urinating and lower back discomfort",
+  "Swollen, painful joints in my fingers that get worse in the morning",
+  "Blurry vision and a dull headache behind my eyes",
+  "Nausea and stomach cramps after eating, especially fatty food",
+  "A red, itchy rash spreading across my chest and neck",
+  "Tingling and numbness in my hands that comes and goes",
+  "Sore throat with white patches and difficulty swallowing",
+  "Persistent lower back pain radiating down my left leg",
+];
 
 const chatInner = document.getElementById('chatInner');
 const emptyState = document.getElementById('emptyState');
@@ -397,13 +427,30 @@ inputBox.addEventListener('keydown', (e) => {
 });
 sendBtn.addEventListener('click', sendMessage);
 
-document.querySelectorAll('.suggestion-chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    inputBox.value = chip.dataset.text;
-    inputBox.dispatchEvent(new Event('input'));
-    sendMessage();
+document.querySelectorAll('.empty-state .suggestion-chip').forEach(chip => chip.remove());
+
+const quickSuggestions = document.getElementById('quickSuggestions');
+
+function pickRandom(pool, n){
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
+
+function renderSuggestions(){
+  const picks = pickRandom(SUGGESTION_POOL, 3);
+  quickSuggestions.innerHTML = picks.map(text =>
+    `<div class="suggestion-chip" data-text="${text.replace(/"/g, '&quot;')}">${text}</div>`
+  ).join('');
+  quickSuggestions.querySelectorAll('.suggestion-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      inputBox.value = chip.dataset.text;
+      inputBox.dispatchEvent(new Event('input'));
+      sendMessage();
+    });
   });
-});
+}
+
+renderSuggestions();
 
 function scrollToBottom(){
   requestAnimationFrame(() => { main.scrollTop = main.scrollHeight; });
@@ -524,11 +571,13 @@ async function sendMessage(){
     const data = await res.json();
     removeThinkingRow();
     addPredictionResult(data);
+    renderSuggestions();
   }catch(e){
     removeThinkingRow();
     // graceful fallback: still show something useful in demo mode
     await new Promise(r => setTimeout(r, 600));
     addPredictionResult(demoPredict(text));
+    renderSuggestions();
   }
 }
 </script>
