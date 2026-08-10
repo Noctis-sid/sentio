@@ -352,7 +352,13 @@
 // ============================================================
 // CONFIG — point this at your FastAPI backend (see backend/app.py)
 // ============================================================
-const API_URL = "http://localhost:8000/predict";
+// Automatically uses localhost while developing, and your Render backend
+// once deployed. Just replace the string below with your actual Render URL
+// after Step 4 (it'll look like https://sentio-backend-xxxx.onrender.com).
+const RENDER_BACKEND_URL = "https://sentio-backend.onrender.com"; // <-- update after deploying
+const isLocal = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
+const BASE_URL = isLocal ? "http://localhost:8000" : RENDER_BACKEND_URL;
+const API_URL = `${BASE_URL}/predict`;
 const TOP_K = 4;
 
 const chatInner = document.getElementById('chatInner');
